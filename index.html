@@ -277,9 +277,19 @@
       table{min-width:0;font-size:8px}.tile{box-shadow:none!important;transform:none!important}
       .tile .t-emoji{filter:none}
     }
-  </style>
+  #loginGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:linear-gradient(130deg,#061a31d9,#0c4779de),url('https://drive.google.com/thumbnail?id=1mfedXoa-J3iB3MMf-OwYgh5rdSX0XS7z&sz=w2000') center/cover}
+#loginGate.off{display:none}
+.loginCard{width:min(420px,100%);padding:35px 30px;background:linear-gradient(155deg,#fff,#e9f3fc);color:#102a47;border-radius:22px;box-shadow:0 25px 70px #0008,inset 0 1px #fff;border:1px solid #ffffffc9}
+.loginCard h2{font-size:25px;margin:0 0 6px;color:#082a4b}
+.loginCard p{color:#53718c;margin:0 0 24px}
+.loginCard label{display:block;font-weight:800;font-size:12px;margin:14px 0 6px}
+.loginCard input{width:100%;height:44px;padding:0 13px;border:1px solid #bfd4e9;border-radius:10px;color:#102a47;background:#fff}
+.loginCard button{width:100%;margin-top:22px;height:45px;background:linear-gradient(110deg,#075ca9,#08a5c8);border-radius:10px;color:white;font-weight:900;box-shadow:0 8px 18px #0b6ca43d}
+#loginError{color:#b42342;font-size:12px;margin-top:10px;min-height:20px}
+</style>
 </head>
 <body>
+<div id="loginGate"><form class="loginCard" id="loginForm"><h2>LANCAR PACITAN</h2><p>Masuk menggunakan akun pegawai yang terdaftar.</p><label for="loginUser">Username</label><input id="loginUser" autocomplete="username" required maxlength="80"><label for="loginPass">Password</label><input id="loginPass" type="password" autocomplete="current-password" required maxlength="200"><div id="loginError" role="alert"></div><button id="loginBtn" type="submit">MASUK DASHBOARD</button></form></div>
 
 <div id="lancarSplash" role="status" aria-live="polite">
   <div class="splash-center">
@@ -317,6 +327,7 @@
         </div>
         <div class="hero-right">
           <div class="hbtns">
+<button class="hbtn" onclick="lancarLogout()">Keluar</button>
             <button class="hbtn" id="btnTheme" onclick="toggleTheme()">Gelap</button>
             <button class="hbtn" onclick="window.print()">Cetak</button>
             <button class="hbtn" onclick="unduhCsv()">Unduh CSV</button>
@@ -451,6 +462,17 @@
 
 <script>
 'use strict';
+var LANCAR_WORKER_URL='GANTI_DENGAN_URL_WORKER_ANDA';
+var lancarToken='';
+async function lancarPost(body){
+  var r=await fetch(LANCAR_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
+  var d=await r.json();if(!r.ok)throw Error(d.error||'Koneksi gagal');return d;
+}
+async function lancarLogout(){
+  var t=lancarToken;lancarToken='';DATA={cases:[],months:[],positions:[],summary:{}};loaded=false;
+  $('loginGate').classList.remove('off');$('loginPass').value='';
+  if(t)try{await lancarPost({action:'logout',token:t});}catch(e){}
+}
 var DATA={cases:[],months:[],positions:[],summary:{}},currentPage='dashboard',busy=false,loaded=false,monthInitialized=false;
 var F={kuasa:''},watchdog=null;
 var $=function(id){return document.getElementById(id);};
@@ -524,35 +546,21 @@ function splashDone(){var e=$('lancarSplash');if(e)e.classList.add('hide');}
 function splashFail(m){var e=$('splashError');if(e){e.textContent=m;e.style.display='block';}
   var s=$('splashSpinner');if(s)s.style.display='none';var b=$('splashRetry');if(b)b.style.display='inline-block';}
 
-/* Koneksi JSONP untuk GitHub Pages; seluruh tampilan dan perhitungan tetap asli. */
-var LANCAR_API_URL='https://script.google.com/macros/s/AKfycbygyD9tInas1RlasrsCAmWWd3VTFd6b-YR0giZKE6dugQ3d9yOd6Iz_MMamv9_new-G/exec';
+/* GANTI URL berikut dengan URL deployment Web App Apps Script berakhiran /exec.
+ * Jangan pakai /dev atau URL script.googleusercontent.com/macros/echo. */
+/* Akses data lengkap melalui Worker setelah login. */
 var lancarRequestId=0;
-function load(){
-  if(busy)return;
-  var retry=$('splashRetry');if(retry)retry.style.display='none';
-  var se=$('splashError');if(se)se.style.display='none';
-  var sp=$('splashSpinner');if(sp)sp.style.display='block';
+async function load(){
+  if(busy||!lancarToken)return;
   busy=true;
-  var b=$('refresh');b.disabled=true;b.innerHTML='Memuat&hellip;';$('error').style.display='none';
-  if(watchdog){clearTimeout(watchdog);watchdog=null;}
-  var callback='lancarCb'+(++lancarRequestId),script=document.createElement('script'),finished=false;
-  function finish(err,d){
-    if(finished)return;finished=true;
-    if(watchdog){clearTimeout(watchdog);watchdog=null;}
-    if(script.parentNode)script.parentNode.removeChild(script);
-    try{delete window[callback];}catch(ex){window[callback]=undefined;}
-    busy=false;b.disabled=false;b.innerHTML='&#10227; Perbarui Data';
-    if(err||!d||!d.ok){var msg=err||(d&&d.error)||'Respons API tidak valid';showError(msg);if(!loaded)splashFail(msg);return;}
-    loaded=true;DATA=d;
-    try{fill();render();}catch(ex){showError('Galat menampilkan data: '+((ex&&ex.message)||ex));}
-    splashDone();
+  var b=$('refresh');b.disabled=true;b.textContent='Memuat...';$('error').style.display='none';
+  try{
+    var d=await lancarPost({action:'data',token:lancarToken});
+    if(!d.ok){if(d.sessionExpired){await lancarLogout();return;}throw Error(d.error||'Data tidak tersedia');}
+    loaded=true;DATA=d;fill();render();splashDone();
     $('lastUpdate').textContent='Terakhir diperbarui: '+new Date().toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short',timeZone:'Asia/Jakarta'})+' WIB';
-  }
-  window[callback]=function(d){finish(null,d);};
-  script.onerror=function(){finish('Gagal menghubungi API Apps Script.');};
-  script.src=LANCAR_API_URL+'?api=daftar&callback='+callback+'&_='+Date.now();
-  watchdog=setTimeout(function(){finish('Server tidak menjawab lebih dari 30 detik. Periksa koneksi, lalu tekan Coba Lagi.');},30000);
-  document.head.appendChild(script);
+  }catch(e){showError(e.message||String(e));splashFail(e.message||String(e));}
+  finally{busy=false;b.disabled=false;b.innerHTML='&#10227; Perbarui Data';}
 }
 function showError(m){$('error').textContent=m;$('error').style.display='block';}
 
@@ -761,14 +769,17 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDetail(
 $('kuasa').onchange=function(e){F.kuasa=e.target.value;render();};
 window.addEventListener('scroll',function(){$('toTop').className='toTop'+(window.scrollY>420?' on':'');});
 
-load();
+$('loginForm').addEventListener('submit',async function(e){
+  e.preventDefault();var btn=$('loginBtn');btn.disabled=true;btn.textContent='Memverifikasi...';$('loginError').textContent='';
+  try{
+    var d=await lancarPost({action:'login',user:$('loginUser').value,password:$('loginPass').value});
+    if(!d.ok)throw Error(d.pesan||d.error||'Login gagal');
+    lancarToken=d.token;$('loginPass').value='';$('loginGate').classList.add('off');await load();
+  }catch(ex){$('loginError').textContent=ex.message||'Login gagal';}
+  finally{btn.disabled=false;btn.textContent='MASUK DASHBOARD';}
+});
+splashDone();
 setInterval(function(){if(!document.hidden)load();},60000);
-document.addEventListener('contextmenu', function(e){
-  e.preventDefault();
-});
-document.addEventListener('keydown', function(e){
-  if(e.key === 'F12' && !e.shiftKey) e.preventDefault();
-});
 </script>
 </body>
 </html>
