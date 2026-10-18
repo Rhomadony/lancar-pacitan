@@ -524,44 +524,36 @@ function splashDone(){var e=$('lancarSplash');if(e)e.classList.add('hide');}
 function splashFail(m){var e=$('splashError');if(e){e.textContent=m;e.style.display='block';}
   var s=$('splashSpinner');if(s)s.style.display='none';var b=$('splashRetry');if(b)b.style.display='inline-block';}
 
-/* GANTI URL berikut dengan URL deployment Web App Apps Script berakhiran /exec.
- * Jangan pakai /dev atau URL script.googleusercontent.com/macros/echo. */
+/* Koneksi JSONP untuk GitHub Pages; seluruh tampilan dan perhitungan tetap asli. */
 var LANCAR_API_URL='https://script.google.com/macros/s/AKfycbygyD9tInas1RlasrsCAmWWd3VTFd6b-YR0giZKE6dugQ3d9yOd6Iz_MMamv9_new-G/exec';
 var lancarRequestId=0;
 function load(){
   if(busy)return;
-  if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?|$)/.test(LANCAR_API_URL)){
-    showError('Isi LANCAR_API_URL dengan URL Web App Apps Script berakhiran /exec.');
-    splashFail('Alamat API belum diatur. Edit LANCAR_API_URL di index.html GitHub.');return;
-  }
-  busy=true;
-  var b=$('refresh');b.disabled=true;b.innerHTML='Memuat&hellip;';$('error').style.display='none';
   var retry=$('splashRetry');if(retry)retry.style.display='none';
   var se=$('splashError');if(se)se.style.display='none';
   var sp=$('splashSpinner');if(sp)sp.style.display='block';
-  var id=++lancarRequestId,callback='lancarCb'+id;
-  var script=document.createElement('script');
-  var finished=false;
+  busy=true;
+  var b=$('refresh');b.disabled=true;b.innerHTML='Memuat&hellip;';$('error').style.display='none';
+  if(watchdog){clearTimeout(watchdog);watchdog=null;}
+  var callback='lancarCb'+(++lancarRequestId),script=document.createElement('script'),finished=false;
   function finish(err,d){
     if(finished)return;finished=true;
     if(watchdog){clearTimeout(watchdog);watchdog=null;}
     if(script.parentNode)script.parentNode.removeChild(script);
     try{delete window[callback];}catch(ex){window[callback]=undefined;}
     busy=false;b.disabled=false;b.innerHTML='&#10227; Perbarui Data';
-    if(err){showError(err);splashFail(err);return;}
-    if(!d||!d.ok){var msg=(d&&d.error)||'Respons API tidak valid';showError(msg);splashFail(msg);return;}
+    if(err||!d||!d.ok){var msg=err||(d&&d.error)||'Respons API tidak valid';showError(msg);if(!loaded)splashFail(msg);return;}
     loaded=true;DATA=d;
-    try{fill();render();}catch(ex){showError('Galat menampilkan data: '+ex.message);}
+    try{fill();render();}catch(ex){showError('Galat menampilkan data: '+((ex&&ex.message)||ex));}
     splashDone();
     $('lastUpdate').textContent='Terakhir diperbarui: '+new Date().toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short',timeZone:'Asia/Jakarta'})+' WIB';
   }
   window[callback]=function(d){finish(null,d);};
-  script.onerror=function(){finish('Gagal menghubungi API. Periksa deployment Apps Script dan URL /exec.');};
-  script.src=LANCAR_API_URL+(LANCAR_API_URL.indexOf('?')>=0?'&':'?')+'api=daftar&callback='+callback+'&_='+Date.now();
-  watchdog=setTimeout(function(){finish('API tidak menjawab dalam 30 detik. Coba perbarui data.');},30000);
+  script.onerror=function(){finish('Gagal menghubungi API Apps Script.');};
+  script.src=LANCAR_API_URL+'?api=daftar&callback='+callback+'&_='+Date.now();
+  watchdog=setTimeout(function(){finish('Server tidak menjawab lebih dari 30 detik. Periksa koneksi, lalu tekan Coba Lagi.');},30000);
   document.head.appendChild(script);
 }
-
 function showError(m){$('error').textContent=m;$('error').style.display='block';}
 
 function defaultMonth(){
