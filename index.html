@@ -38,6 +38,7 @@
     #lancarSplash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
       background:linear-gradient(145deg,#062440,#0c4e78);color:#fff;transition:opacity .32s,visibility .32s}
     #lancarSplash.hide{opacity:0;visibility:hidden;pointer-events:none}
+    #lancarSplash:not(.hide){transition:none}
     .splash-center{text-align:center;padding:28px;max-width:340px}
     .splash-logo{width:78px;height:78px;object-fit:contain;filter:drop-shadow(0 6px 16px #0004);margin-bottom:14px}
     .splash-title{font-size:27px;font-weight:900;letter-spacing:.8px}
@@ -48,6 +49,10 @@
     .splash-retry{margin-top:12px;padding:9px 17px;border-radius:8px;background:#0aa4d6;color:#fff;font-weight:800;display:none}
     @keyframes sp{to{transform:rotate(360deg)}}
 
+    /* V29: dashboard benar-benar tersembunyi sampai sesi DAN data siap. */
+    body:not(.lancar-data-ready) .layout{visibility:hidden!important}
+    body:not(.lancar-data-ready) .toTop{visibility:hidden!important}
+    body.auth-pending #lancarSplash{visibility:visible}
     .layout{display:flex;min-height:100vh}
     .sidebar{width:222px;flex:0 0 222px;background:linear-gradient(170deg,#062440,#103f66 75%,#082b4c);color:#fff;
       position:sticky;top:0;height:100vh;display:flex;flex-direction:column;z-index:30;box-shadow:4px 0 24px rgba(4,24,44,.2)}
@@ -475,7 +480,9 @@ async function lancarPost(body){
 }
 async function lancarLogout(){
   var t=lancarToken;lancarToken='';lancarAuthEpoch++;clearLancarToken();
+  document.body.classList.remove('lancar-data-ready');
   DATA={cases:[],months:[],positions:[],summary:{}};loaded=false;monthInitialized=false;
+  document.body.classList.remove('auth-pending');
   $('lancarSplash').classList.add('hide');$('loginGate').classList.remove('off');$('loginPass').value='';
   $('rows').innerHTML='<tr><td colspan="12" class="empty">Silakan login.</td></tr>';
   $('positions').innerHTML='';closeDetail();
@@ -569,7 +576,8 @@ async function load(){
     var d=await lancarPost({action:'data',token:lancarToken});
     if(epoch!==lancarAuthEpoch)return;
     if(!d.ok){if(d.sessionExpired){await lancarLogout();return;}throw Error(d.error||'Data tidak tersedia');}
-    DATA=d;loaded=true;fill();render();splashDone();
+    DATA=d;loaded=true;fill();render();
+    document.body.classList.add('lancar-data-ready');splashDone();
     $('lastUpdate').textContent='Terakhir diperbarui: '+new Date().toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short',timeZone:'Asia/Jakarta'})+' WIB';
   }catch(e){
     if(epoch!==lancarAuthEpoch)return;
