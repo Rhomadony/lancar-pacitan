@@ -282,20 +282,47 @@
       table{min-width:0;font-size:8px}.tile{box-shadow:none!important;transform:none!important}
       .tile .t-emoji{filter:none}
     }
-  #loginGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:linear-gradient(130deg,#061a31d9,#0c4779de),url('https://drive.google.com/thumbnail?id=1mfedXoa-J3iB3MMf-OwYgh5rdSX0XS7z&sz=w2000') center/cover}
-#loginGate.off{display:none}
-body.auth-pending #loginGate{display:none}
-.loginCard{width:min(420px,100%);padding:35px 30px;background:linear-gradient(155deg,#fff,#e9f3fc);color:#102a47;border-radius:22px;box-shadow:0 25px 70px #0008,inset 0 1px #fff;border:1px solid #ffffffc9}
-.loginCard h2{font-size:25px;margin:0 0 6px;color:#082a4b}
-.loginCard p{color:#53718c;margin:0 0 24px}
-.loginCard label{display:block;font-weight:800;font-size:12px;margin:14px 0 6px}
-.loginCard input{width:100%;height:44px;padding:0 13px;border:1px solid #bfd4e9;border-radius:10px;color:#102a47;background:#fff}
-.loginCard button{width:100%;margin-top:22px;height:45px;background:linear-gradient(110deg,#075ca9,#08a5c8);border-radius:10px;color:white;font-weight:900;box-shadow:0 8px 18px #0b6ca43d}
-#loginError{color:#b42342;font-size:12px;margin-top:10px;min-height:20px}
+  /* V30: tampilan login GitHub disamakan dengan Apps Script */
+  #loginGate{position:fixed;inset:0;z-index:11000;display:grid;place-items:center;padding:22px;
+    background:linear-gradient(115deg,rgba(3,19,38,.88),rgba(5,55,89,.77)),url('https://drive.google.com/thumbnail?id=1mfedXoa-J3iB3MMf-OwYgh5rdSX0XS7z&sz=w2000') center/cover no-repeat;
+    color:#fff;font-family:'Segoe UI',Arial,sans-serif}
+  #loginGate.off,body.auth-pending #loginGate{display:none!important}
+  .loginCard{width:min(100%,395px);padding:36px 32px 30px;border:1px solid rgba(94,191,243,.36);border-radius:24px;
+    background:linear-gradient(145deg,rgba(4,28,58,.97),rgba(8,52,91,.96) 55%,rgba(3,25,53,.97));
+    backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+    box-shadow:0 32px 75px rgba(0,9,27,.62),0 12px 0 rgba(0,17,42,.35),inset 0 1px 0 rgba(127,218,255,.22);
+    transform:perspective(1000px) rotateX(2deg);transition:transform .25s,box-shadow .25s}
+  .loginCard:hover{transform:perspective(1000px) rotateX(0);box-shadow:0 36px 85px rgba(0,9,27,.7),0 12px 0 rgba(0,17,42,.35),inset 0 1px 0 rgba(127,218,255,.25)}
+  .loginLogo{display:block;width:76px;height:76px;object-fit:contain;margin:0 auto 12px;filter:drop-shadow(0 7px 12px #001b36a0)}
+  .loginCard h2{text-align:center;font-weight:850;font-size:25px;letter-spacing:.8px;margin:0 0 28px;color:#fff}
+  .loginCard h2 span{color:#48d2f6}
+  .loginCard label{display:block;font-size:11px;font-weight:700;margin:16px 0 7px;color:#c8e7fa}
+  .loginCard input{width:100%;height:46px;border:1px solid rgba(123,193,232,.37);border-radius:12px;
+    background:rgba(0,21,51,.58);color:#fff;padding:0 14px;outline:0;box-shadow:inset 0 2px 7px rgba(0,9,25,.4)}
+  .loginCard input::placeholder{color:#b0c9dbaa}
+  .loginCard input:focus{border-color:#53d5ef;background:rgba(0,37,78,.76);box-shadow:0 0 0 3px #3ac4e429}
+  .loginCard button{width:100%;height:47px;margin-top:22px;border-radius:12px;color:#fff;font-weight:800;font-size:13px;
+    background:linear-gradient(125deg,#0866c9,#08a9d5);box-shadow:0 8px 0 #043c73,0 16px 26px #001b3980;transition:transform .15s,box-shadow .15s}
+  .loginCard button:hover{transform:translateY(-2px);box-shadow:0 10px 0 #043c73,0 20px 28px #001b3980}
+  .loginCard button:active{transform:translateY(5px);box-shadow:0 3px 0 #043c73,0 8px 14px #001b3980}
+  .loginCard button:disabled{opacity:.65;cursor:wait;transform:none}
+  #loginError{min-height:17px;margin:16px 0 0;color:#ffd5dc;text-align:center;font-size:11px}
+  @media(max-width:480px){.loginCard{padding:29px 23px}.loginCard h2{font-size:23px}}
 </style>
 </head>
 <body class="auth-pending">
-<div id="loginGate"><form class="loginCard" id="loginForm"><h2>LANCAR PACITAN</h2><p>Masuk menggunakan akun pegawai yang terdaftar.</p><label for="loginUser">Username</label><input id="loginUser" autocomplete="username" required maxlength="80"><label for="loginPass">Password</label><input id="loginPass" type="password" autocomplete="current-password" required maxlength="200"><div id="loginError" role="alert"></div><button id="loginBtn" type="submit">MASUK DASHBOARD</button></form></div>
+<div id="loginGate" aria-label="Login LANCAR PACITAN">
+  <form class="loginCard" id="loginForm" autocomplete="on">
+    <img class="loginLogo" src="https://drive.google.com/thumbnail?id=1hkdRJM5amMEJKOLXHkjVLNu3TqvVI5Ew&sz=w400" alt="Logo ATR/BPN" referrerpolicy="no-referrer">
+    <h2>LANCAR <span>PACITAN</span></h2>
+    <label for="loginUser">USERNAME</label>
+    <input id="loginUser" name="username" autocomplete="username" placeholder="Masukkan username" required maxlength="80">
+    <label for="loginPass">PASSWORD</label>
+    <input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="Masukkan password" required maxlength="200">
+    <button id="loginBtn" type="submit">LOGIN</button>
+    <p id="loginError" role="alert"></p>
+  </form>
+</div>
 
 <div id="lancarSplash" role="status" aria-live="polite">
   <div class="splash-center">
@@ -803,7 +830,7 @@ $('loginForm').addEventListener('submit',async function(e){
     $('lancarSplash').classList.remove('hide');$('loginGate').classList.add('off');
     await load();
   }catch(ex){if(epoch===lancarAuthEpoch)$('loginError').textContent=ex.message||'Login gagal';}
-  finally{btn.disabled=false;btn.textContent='MASUK DASHBOARD';}
+  finally{btn.disabled=false;btn.textContent='LOGIN';}
 });
 /* Pulihkan sesi setelah F5. Validasi token ke server sebelum menampilkan data. */
 (async function(){
