@@ -458,7 +458,7 @@
         <div class="filters">
           <div class="field"><label for="month">Bulan Entri</label><select id="month" onchange="render()"><option value="">Semua Bulan</option></select></div>
           <div class="field"><label for="search">Pencarian Berkas</label><input id="search" oninput="render()" placeholder="Nomor berkas, pemohon, jenis layanan"></div>
-          <div class="field"><label for="status">Status Waktu</label><select id="status" onchange="render()">
+          <div class="field"><label for="status">Status Waktu</label><select id="status" onchange="dashboardCategory='';render()">
             <option value="">Semua Status</option>
             <option value="DALAM TARGET">Dalam Batas Waktu</option>
             <option value="MENDEKATI BATAS">Mendekati Batas</option>
@@ -667,8 +667,18 @@ function fill(){
 function toggleMenu(){$('sidebar').classList.toggle('open');}
 
 /* V21: filter yang menempel antar halaman dibersihkan agar klik tile tidak "kosong". */
+var dashboardCategory=''; // Kategori kartu dashboard; terpisah dari dropdown status.
+function matchesDashboardCategory(x){
+  if(!dashboardCategory)return true;
+  if(dashboardCategory==='AKTIF')return !x.completed;
+  if(dashboardCategory==='SELESAI')return !!x.completed;
+  if(x.completed)return false;
+  if(dashboardCategory==='MENDEKATI BATAS')return x.status==='MENDEKATI BATAS'||x.status==='BATAS HARI INI';
+  if(dashboardCategory==='TERLAMBAT')return x.status==='TERLAMBAT';
+  return true;
+}
 function clearKuasa(){F.kuasa='';var k=$('kuasa');if(k)k.value='';}
-function clearFilterRingan(){clearKuasa();$('status').value='';$('position').value='';$('search').value='';}
+function clearFilterRingan(){dashboardCategory='';clearKuasa();$('status').value='';$('position').value='';$('search').value='';}
 
 function goPage(page){
   currentPage=(page==='daftar')?'daftar':'dashboard';
@@ -683,9 +693,9 @@ function goPage(page){
   $('listPanel').classList.toggle('section-hidden',dash);
   render();window.scrollTo({top:0,behavior:'smooth'});
 }
-function resetFilters(){F.kuasa='';['status','position'].forEach(function(k){$(k).value='';});$('kuasa').value='';$('month').value=defaultMonth();$('search').value='';render();}
-function pickPosition(name){$('position').value=($('position').value===name)?'':name;clearKuasa();goPage('daftar');}
-function pickKuasa(v){F.kuasa=(F.kuasa===v)?'':v;$('kuasa').value=F.kuasa;$('status').value='';$('position').value='';goPage('daftar');}
+function resetFilters(){dashboardCategory='';F.kuasa='';['status','position'].forEach(function(k){$(k).value='';});$('kuasa').value='';$('month').value=defaultMonth();$('search').value='';render();}
+function pickPosition(name){dashboardCategory='';$('position').value=($('position').value===name)?'':name;clearKuasa();goPage('daftar');}
+function pickKuasa(v){dashboardCategory='';F.kuasa=(F.kuasa===v)?'':v;$('kuasa').value=F.kuasa;$('status').value='';$('position').value='';goPage('daftar');}
 
 function timeCell(x){
   if(x.completed)return '<div class="timebox"><span class="timevalue">Selesai</span><div class="timebar"><div class="timebar-fill" style="width:100%"></div></div><div class="timehint">Berkas telah selesai</div></div>';
@@ -716,6 +726,7 @@ function render(){
   var all=DATA.cases||[];
   var a=all.filter(function(x){
     if(m&&x.month!==m)return false;
+    if(!matchesDashboardCategory(x))return false;
     if(st&&x.status!==st)return false;
     if(selected&&x.position!==selected)return false;
     if(F.kuasa==='__KOSONG__'){if(String(x.kuasa||'').trim())return false;}
@@ -773,13 +784,14 @@ function openDetail(c){
       '<div class="closed-record-top"><span class="closed-record-icon" aria-hidden="true">&#10003;</span>'+
       '<div><div class="closed-record-label">Keterangan Penyelesaian</div>'+
       '<div class="closed-record-title">'+esc(c.catatanPenyelesaian||'Selesai – Berkas Ditutup')+'</div></div></div>'+
-      '<p class="closed-record-desc">Berkas tercatat selesai melalui penutupan berkas. Tidak lagi dihitung sebagai berkas dalam proses. Rincian alasan penutupan mengikuti keterangan dan dokumen teknis terkait.</p>'+
+      '<p class="closed-record-desc">Berkas tercatat selesai melalui penutupan berkas dan tidak lagi dihitung sebagai tunggakan aktif. Ketepatan waktu dihitung sampai tanggal ditutup, bukan sampai hari ini.</p>'+
+      '<div style="margin-top:11px">'+fld('Tanggal Ditutup',c.tanggalDitutup||'Belum dicatat')+'</div>'+ 
       '</div>';
   }
   if(c.completed){
     h+='<div class="sect"><h4>Penyelesaian</h4>';
     if(c.completionDateKnown){h+=fld('Tanggal Selesai',c.completedDate);}
-    else{h+='<div class="note">Berkas tercatat selesai, namun tanggal penyelesaian belum tercatat.</div>';}
+    else{h+='<div class="note">Berkas tercatat selesai, namun tanggal penyelesaian belum tercatat. Isi tanggal ditutup di kolom AL apabila berkas ditutup melalui kolom AK.</div>';}
     h+='</div>';
   }
   h+='<div class="sect"><h4>Riwayat Pengiriman</h4>';
@@ -805,7 +817,7 @@ function unduhCsv(){
   var m=$('month').value,st=$('status').value,sel=$('position').value,ku=$('kuasa').value;
   var all=DATA.cases||[];
   var a=all.filter(function(x){
-    if(m&&x.month!==m)return false;if(st&&x.status!==st)return false;
+    if(m&&x.month!==m)return false;if(!matchesDashboardCategory(x))return false;if(st&&x.status!==st)return false;
     if(sel&&x.position!==sel)return false;
     if(ku==='__KOSONG__'){if(String(x.kuasa||'').trim())return false;}
     else if(ku&&String(x.kuasa||'').trim()!==ku)return false;
@@ -829,9 +841,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.tilebtn[data-goto]'),fu
   c.addEventListener('click',function(){
     var g=c.getAttribute('data-goto');
     clearKuasa();
-    if(!g||g==='AKTIF'){$('status').value='';goPage('daftar');return;}
-    if(g==='SELESAI'){$('status').value='SELESAI TEPAT WAKTU';goPage('daftar');return;}
-    $('status').value=g;goPage('daftar');
+    dashboardCategory=g||'';
+    // Angka kartu dihitung untuk seluruh bulan; tampilkan seluruh bulan saat kartu diklik.
+    $('month').value='';
+    $('status').value='';$('position').value='';$('search').value='';
+    goPage('daftar');
   });
 });
 Array.prototype.forEach.call(document.querySelectorAll('.tilebtn[data-kuasa]'),function(c){
