@@ -792,7 +792,7 @@ function unduhCsv(){
   var head=['NO BERKAS','NAMA','KETERANGAN PEMOHON','JENIS','BULAN','TANGGAL MASUK','TARGET','BATAS','SISA HARI','STATUS','POSISI','SELESAI','TANGGAL SELESAI'];
   var rows=a.map(function(c){return [c.number,c.name,c.kuasa||'',c.type,c.month,c.entered,c.limit,c.deadline,
     c.completed?'':(c.remaining==null?'':c.remaining),c.status,c.position,c.completed?'YA':'TIDAK',c.completedDate||'']
-    .map(function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}).join(';');});
+    .map(function(v){var t=String(v==null?'':v);if(/^[\s\x00-\x1f]*[=+@-]/.test(t))t="'"+t;return '"'+t.replace(/"/g,'""')+'"';}).join(';');});
   var csv='\ufeff'+[head.join(';')].concat(rows).join('\r\n');
   var el2=document.createElement('a');
   el2.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
@@ -817,6 +817,17 @@ Array.prototype.forEach.call(document.querySelectorAll('.tilebtn[data-kuasa]'),f
 });
 $('ovl').onclick=closeDetail;
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDetail();});
+/* V31: hambatan antarmuka untuk pengguna iseng; BUKAN pengamanan data.
+   DevTools tetap bisa diakses lewat menu browser / alat lain. */
+document.addEventListener('contextmenu',function(e){e.preventDefault();});
+document.addEventListener('keydown',function(e){
+  var key=String(e.key||'').toLowerCase();
+  var blocked=(key==='f12') ||
+    (e.ctrlKey&&e.shiftKey&&['i','j','c','k'].includes(key)) ||
+    (e.ctrlKey&&!e.shiftKey&&key==='u');
+  if(blocked){e.preventDefault();e.stopPropagation();}
+},true);
+
 $('kuasa').onchange=function(e){F.kuasa=e.target.value;render();};
 window.addEventListener('scroll',function(){$('toTop').className='toTop'+(window.scrollY>420?' on':'');});
 
