@@ -247,6 +247,16 @@
     [data-theme="dark"] .note{background:#2a2210;border-color:#4d3d16;color:#e8c976}
     .ptag{display:inline-block;background:var(--surf2);border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:800;color:var(--ink2)}
 
+    /* Tambahan khusus detail Berkas Ditutup; tidak mengubah dashboard. */
+    .closed-record{position:relative;overflow:hidden;border:1px solid color-mix(in srgb,var(--green) 36%,var(--line));border-radius:14px;padding:16px;margin-bottom:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--green) 10%,var(--surf)),var(--surf));box-shadow:var(--sh1)}
+    .closed-record:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--green)}
+    .closed-record-top{display:flex;align-items:center;gap:11px}
+    .closed-record-icon{display:grid;place-items:center;width:38px;height:38px;flex:none;border-radius:11px;background:color-mix(in srgb,var(--green) 15%,var(--surf));color:var(--green);font-size:19px;font-weight:900}
+    .closed-record-label{font-size:10px;font-weight:850;letter-spacing:.75px;text-transform:uppercase;color:var(--muted)}
+    .closed-record-title{font-size:15px;line-height:1.4;font-weight:850;color:var(--ink);margin-top:2px}
+    .closed-record-desc{font-size:11.5px;line-height:1.65;color:var(--ink2);margin:11px 0 0}
+
+
     .toTop{position:fixed;right:20px;bottom:20px;width:46px;height:46px;border-radius:14px;z-index:40;color:#fff;font-size:16px;
       background:linear-gradient(180deg,#0a7ddc,#065fb4);box-shadow:0 10px 24px rgba(7,110,208,.4);
       opacity:0;pointer-events:none;transition:opacity .25s,transform .15s}
@@ -756,6 +766,16 @@ function openDetail(c){
      '<span class="pill '+cls(c.status)+'">'+esc(statusLabel(c.status))+'</span> '+
      (kv==='KUASA'?'<span class="badge ku">KUASA</span>':kv==='TANPA KUASA'?'<span class="badge tk">TANPA KUASA</span>':'<span class="badge">BELUM DIISI</span>')+
      '<div style="margin-top:11px"><span class="ptag">'+esc(positionLabel(c.position))+'</span></div></div>';
+  // Penanda tambahan hanya di panel detail, berdasarkan kolom AK dari Code.gs.
+  // Teks tetap di-escape agar aman bila backend mengirim catatan berbeda.
+  if(c.berkasDitutup===true){
+    h+='<div class="closed-record" role="note">'+
+      '<div class="closed-record-top"><span class="closed-record-icon" aria-hidden="true">&#10003;</span>'+
+      '<div><div class="closed-record-label">Keterangan Penyelesaian</div>'+
+      '<div class="closed-record-title">'+esc(c.catatanPenyelesaian||'Selesai – Berkas Ditutup')+'</div></div></div>'+
+      '<p class="closed-record-desc">Berkas tercatat selesai melalui penutupan berkas. Tidak lagi dihitung sebagai berkas dalam proses. Rincian alasan penutupan mengikuti keterangan dan dokumen teknis terkait.</p>'+
+      '</div>';
+  }
   if(c.completed){
     h+='<div class="sect"><h4>Penyelesaian</h4>';
     if(c.completionDateKnown){h+=fld('Tanggal Selesai',c.completedDate);}
